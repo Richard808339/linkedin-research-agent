@@ -1,0 +1,89 @@
+name: "Code Security Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze Code Security
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # requis pour déposer le SARIF
+      actions: read
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: 'python'
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        # Une PR venue d'un fork reçoit un jeton en lecture seule : l'envoi
+        # échouerait avec « Code scanning is not enabled ». On analyse quand
+        # même, on n'envoie simplement pas — les résultats restent dans le
+        # journal du job.
+        upload: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'never' || 'always' }}
+
+  static-scan:
+    name: Static Scan (Bandit + Semgrep)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install scanners
+      run: pip install --quiet bandit semgrep
+
+    - name: Bandit (analyse statique Python)
+      run: bandit -r . -x ./.git,./.github,./.venv -ll -f screen
+
+    - name: Semgrep (règles communautaires, sans jeton)
+      run: semgrep scan --config=p/default --config=p/python --error --sarif --output=semgrep.sarif
+
+    - name: Publier le rapport Semgrep
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: semgrep-sarif
+        path: semgrep.sarif
+        if-no-files-found: warn
+
+  tests:
+    name: Tests (unittest)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: pip install --quiet -r requirements.txt
+
+    - name: Tests des gardes et de l'API
+      run: python -m unittest discover -s tests -t . -v

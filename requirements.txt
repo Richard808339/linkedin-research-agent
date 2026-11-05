@@ -1,0 +1,12 @@
+# Dépendances d'exécution — volontairement courtes.
+#
+# fastapi        : API HTTP et validation des corps de requête
+# uvicorn        : serveur ASGI
+#
+# `requests` n'est PAS nécessaire : les sorties réseau passent par `safe_get`
+# de security.py, qui repose sur urllib (stdlib) et revalide chaque redirection.
+# L'audit précédent portait deux CVE sur requests (CVE-2024-47081 corrigée en
+# 2.32.4, CVE-2026-25645 corrigée en 2.33.0) : moins de dépendances, moins de
+# surface. Si un jour requests revient, la borne est >= 2.33.0, pas 2.32.4.
+fastapi>=0.115,<1.0
+uvicorn>=0.30,<1.0

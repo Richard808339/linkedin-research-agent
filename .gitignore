@@ -1,0 +1,19 @@
+# Secrets et environnements locaux
+.env
+.env.local
+*.env
+
+# Environnement virtuel
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Données locales
+*.db
+*.sqlite
+*.log
+
+# Outils
+.pytest_cache/
+.mypy_cache/
