@@ -55,8 +55,14 @@ jobs:
     - name: Install scanners
       run: pip install --quiet bandit semgrep
 
-    - name: Bandit (analyse statique Python)
-      run: bandit -r . -x ./.git,./.github,./.venv -ll -f screen
+    - name: Bandit (source — échec si moyen ou plus)
+      run: bandit -r . -x ./.git,./.github,./.venv,./tests -ll -f screen
+
+    - name: Bandit (tests — littéraux volontairement dangereux, B104/B310 ignorés)
+      # Les tests contiennent par nature des « 0.0.0.0 » et des urlopen vers la
+      # boucle locale : les scanner avec les mêmes règles que le code de
+      # production produit du bruit, pas une information.
+      run: bandit -r tests -s B104,B310 -ll -f screen
 
     - name: Semgrep (règles communautaires, sans jeton)
       run: semgrep scan --config=p/default --config=p/python --error --sarif --output=semgrep.sarif

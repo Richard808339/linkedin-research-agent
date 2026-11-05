@@ -52,7 +52,9 @@ def register_once(base: str, orch_key: str, payload: dict, timeout: float = 10.0
         headers={"Content-Type": "application/json", "X-Orchestrator-Key": orch_key},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    # validate_url a déjà imposé http/https et refusé les identifiants dans
+    # l'URL : le schéma dangereux ne peut pas atteindre urlopen.
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
         body = response.read() or b"{}"
         try:
             parsed = json.loads(body)

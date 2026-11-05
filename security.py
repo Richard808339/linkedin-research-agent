@@ -360,7 +360,9 @@ def bind_host(env: Mapping[str, str] | None = None) -> str:
     """
     source = os.environ if env is None else env
     host = (source.get("BIND_HOST") or "127.0.0.1").strip()
-    if host in {"0.0.0.0", "::", "*"}:
+    # Comparaison, pas une écoute : ces valeurs sont précisément celles qu'on
+    # refuse sans EXPOSE_PUBLIC. D'où le nosec : bandit voit le littéral.
+    if host in {"0.0.0.0", "::", "*"}:  # nosec B104
         if (source.get("EXPOSE_PUBLIC") or "").strip().lower() not in TRUE_VALUES:
             raise InsecureConfig(
                 f"BIND_HOST={host!r} exposerait le service sur le réseau : "
