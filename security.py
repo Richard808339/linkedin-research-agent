@@ -25,7 +25,6 @@ service existant sans changer sa configuration.
 from __future__ import annotations
 
 import hashlib
-import hmac
 import ipaddress
 import logging
 import os
@@ -336,7 +335,11 @@ def redact(value: Any, *, keep: int = 8) -> str:
     text = "" if value is None else str(value)
     if not text:
         return "fp:empty:0"
-    digest = hmac.new(_FINGERPRINT_KEY, text.encode("utf-8", "replace"), hashlib.sha256).hexdigest()  # codeql[py/weak-sensitive-data-hashing]
+    # BLAKE2b à clé : aussi rapide qu'un SHA-256, mais la clé empêche de
+    # recalculer l'empreinte sans la connaître. Ce n'est pas un hachage de mot
+    # de passe et cela ne prétend pas l'être.
+    digest = hashlib.blake2b(text.encode("utf-8", "replace"),
+                             key=_FINGERPRINT_KEY, digest_size=16).hexdigest()
     return f"fp:{digest[:keep]}:{len(text)}"
 
 
