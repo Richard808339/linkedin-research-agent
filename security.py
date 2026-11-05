@@ -25,9 +25,11 @@ service existant sans changer sa configuration.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import ipaddress
 import logging
 import os
+import secrets
 import socket
 import time
 import urllib.error
@@ -312,18 +314,30 @@ def safe_get(url: str, *, timeout: float = 10.0, max_bytes: int = 2_000_000,
 # ---------------------------------------------------------------------------
 # 5. Journaux : ni secret, ni prompt en clair
 # ---------------------------------------------------------------------------
+# Clé des empreintes de journal. Vide par défaut : elle est alors tirée au
+# démarrage, ce qui suffit pour corréler pendant une exécution et ne laisse
+# aucune trace exploitable dans les fichiers de log.
+_FINGERPRINT_KEY: bytes = (os.environ.get("FINGERPRINT_KEY") or "").encode("utf-8") or secrets.token_bytes(32)
+
+
 def redact(value: Any, *, keep: int = 8) -> str:
     """Empreinte stable et non réversible, pour corréler sans divulguer.
 
     Un journal est lisible par plus de monde que la base : y écrire une clé
     refusée ou le prompt d'un utilisateur, c'est les publier. L'empreinte
     suffit pour répondre à « est-ce la même clé qui a été refusée deux fois ? ».
+
+    HMAC et non SHA-256 nu : huit caractères d'un SHA-256 non salé se
+    retrouvent par force brute quand la valeur est un jeton court — un journal
+    volé rendrait alors la clé. Avec une clé HMAC éphémère, l'empreinte ne dit
+    rien hors du processus. `FINGERPRINT_KEY` rend la corrélation stable entre
+    redémarrages, au prix d'un secret de plus à protéger.
     """
     text = "" if value is None else str(value)
     if not text:
-        return "sha256:empty:0"
-    digest = hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()
-    return f"sha256:{digest[:keep]}:{len(text)}"
+        return "fp:empty:0"
+    digest = hmac.new(_FINGERPRINT_KEY, text.encode("utf-8", "replace"), hashlib.sha256).hexdigest()  # codeql[py/weak-sensitive-data-hashing]
+    return f"fp:{digest[:keep]}:{len(text)}"
 
 
 def _is_secret_field(name: str) -> bool:

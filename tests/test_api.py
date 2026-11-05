@@ -134,7 +134,7 @@ class ApiTests(unittest.TestCase):
         # L'agent renvoie une empreinte, pas la question : une requête de
         # recherche sur une personne est une donnée personnelle.
         self.assertNotIn(secret_query, body)
-        self.assertIn("query_sha256", body)
+        self.assertIn("query_fingerprint", body)
 
     def test_query_length_is_validated(self):
         status, _, _ = self.call("/research", {"query": "x" * 500})

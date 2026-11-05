@@ -14,7 +14,6 @@ clair, écoute en boucle locale par défaut.
 
 from __future__ import annotations
 
-import hashlib
 import hmac
 import json
 import logging
@@ -260,7 +259,7 @@ def research(body: ResearchRequest, _key: str = Depends(require_key)) -> dict[st
     personne, c'est-à-dire une donnée personnelle.
     """
     security.log_safe(LOG, "research.demande", prompt=body.query,
-                      kind=body.kind, empreinte=hashlib.sha256(body.query.encode()).hexdigest()[:8])
+                      kind=body.kind, empreinte=security.redact(body.query))
     results: list[dict[str, Any]] = []
     errors: list[str] = []
     try:
@@ -277,7 +276,7 @@ def research(body: ResearchRequest, _key: str = Depends(require_key)) -> dict[st
     linkedin = BACKENDS["linkedin"](body.query)
     return {
         "agent_id": AGENT_ID,
-        "query_sha256": hashlib.sha256(body.query.encode()).hexdigest()[:16],
+        "query_fingerprint": security.redact(body.query, keep=16),
         "kind": body.kind,
         "result_count": len(results),
         "results": results,

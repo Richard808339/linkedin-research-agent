@@ -74,7 +74,7 @@ Chaque garde existe à cause d'un défaut constaté, pas par principe.
 | SSRF — le serveur va chercher l'adresse fournie | `validate_url()` : schéma, identifiants, métadonnées, résolution DNS, toutes les IP | `security.py` |
 | SSRF par redirection | `safe_get()` : aucune redirection suivie sans revalidation stricte | `security.py` |
 | CORS accepté de n'importe quel site | `cors_origins()` : liste explicite, `*` refusé | `security.py` |
-| Clé refusée écrite en clair | `log_safe()` : empreinte SHA-256 tronquée | `security.py` |
+| Clé refusée écrite en clair | `log_safe()` : empreinte HMAC tronquée | `security.py` |
 | Prompt utilisateur journalisé | `log_safe()` + `/research` ne renvoie qu'une empreinte | `research_agent.py` |
 | Écoute sur toutes les interfaces | `bind_host()` : `127.0.0.1` par défaut, `EXPOSE_PUBLIC=1` requis | `security.py` |
 | Dépendances vulnérables | pas de `requests` ; sinon borne `>= 2.33.0` (CVE-2024-47081 corrigée en 2.32.4, CVE-2026-25645 en 2.33.0) | `requirements.txt` |

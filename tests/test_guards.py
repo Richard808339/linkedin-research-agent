@@ -206,7 +206,7 @@ class LogTests(unittest.TestCase):
         secret = "sk-live-abcdef123456"
         masked = G.redact(secret)
         self.assertNotIn(secret, masked)
-        self.assertIn("sha256:", masked)
+        self.assertIn("fp:", masked)
         self.assertTrue(masked.endswith(f":{len(secret)}"))
 
     def test_redact_is_stable(self):
@@ -214,7 +214,7 @@ class LogTests(unittest.TestCase):
         self.assertNotEqual(G.redact("abc"), G.redact("abd"))
 
     def test_empty_value(self):
-        self.assertEqual(G.redact(None), "sha256:empty:0")
+        self.assertEqual(G.redact(None), "fp:empty:0")
 
     def test_log_safe_masks_secret_and_prompt(self):
         secret = "cle-refusee-tres-longue-123"
